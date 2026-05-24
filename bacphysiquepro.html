@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BacPhysiquePro — Annales & Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+:root{--bg:#080c14;--surf:#0f1724;--surf2:#161f30;--blue:#4f8ef7;--green:#34d68a;--purple:#a78bfa;--orange:#fb923c;--yellow:#facc15;--red:#f87171;--text:#e2e8f4;--muted:#7d92b0;--border:#1a2840;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.hidden{display:none!important;}
+.screen{display:none;min-height:100vh;}
+.screen.active{display:block;}
+#screen-home{display:flex;align-items:center;justify-content:center;padding:1rem;}
+.card{background:var(--surf);border:1px solid var(--border);border-radius:20px;padding:2rem 1.8rem;max-width:440px;width:100%;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.6);}
+input[type=text],input[type=password]{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:.68rem 1rem;color:var(--text);font-size:.92rem;font-family:'DM Sans',sans-serif;outline:none;display:block;margin-bottom:.9rem;}
+input[type=text]:focus,input[type=password]:focus{border-color:var(--blue);}
+.btn-blue{width:100%;background:var(--blue);border:none;border-radius:10px;padding:.72rem;color:#fff;font-size:.88rem;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;transition:opacity .2s;}
+.btn-blue:hover{opacity:.88;}
+.btn-ghost{background:transparent;border:1px solid var(--border);border-radius:8px;padding:.32rem .85rem;color:var(--muted);font-size:.73rem;cursor:pointer;}
+.btn-paypal{display:flex;align-items:center;justify-content:center;gap:.6rem;background:#0070ba;color:#fff;border-radius:10px;padding:.75rem;text-decoration:none;font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;}
+.header{background:var(--surf);border-bottom:1px solid var(--border);padding:.8rem 1.2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;position:sticky;top:0;z-index:10;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:.95rem;}
+.logo span{color:var(--blue);}
+.nav-tabs{display:flex;gap:.35rem;flex-wrap:wrap;}
+.nav-tab{padding:.35rem .8rem;border-radius:9px;border:none;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:.72rem;background:transparent;color:var(--muted);transition:all .15s;}
+.nav-tab.active{background:var(--blue);color:#fff;}
+.content{max-width:1100px;margin:0 auto;padding:1.2rem 1rem 4rem;}
+.tag{font-size:.63rem;padding:.14rem .42rem;border-radius:5px;font-weight:500;}
+.annale-card{background:var(--surf);border:1px solid var(--border);border-radius:13px;padding:1rem 1.1rem;position:relative;transition:all .18s;}
+.annale-card:hover{transform:translateY(-2px);border-color:rgba(79,142,247,.3);box-shadow:0 6px 24px rgba(0,0,0,.4);}
+.year-badge{position:absolute;top:.7rem;right:.8rem;background:rgba(79,142,247,.1);color:var(--blue);font-size:.62rem;font-weight:700;padding:.12rem .45rem;border-radius:5px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:.8rem;}
+.year-filters{display:flex;gap:.35rem;justify-content:center;flex-wrap:wrap;margin-bottom:.8rem;}
+.year-btn{padding:.32rem .8rem;border-radius:100px;border:1px solid var(--border);font-size:.75rem;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;background:var(--surf);color:var(--muted);transition:all .15s;}
+.year-btn.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+.search-wrap{max-width:400px;margin:0 auto .8rem;position:relative;}
+.search-wrap::before{content:'🔍';position:absolute;left:.8rem;top:50%;transform:translateY(-50%);}
+.search-wrap input{padding-left:2.3rem;margin:0;}
+.card-links{display:flex;gap:.45rem;margin-top:.75rem;}
+.btn-sujet,.btn-corrige{flex:1;display:flex;align-items:center;justify-content:center;gap:.3rem;padding:.45rem;border-radius:8px;text-decoration:none;font-size:.73rem;font-weight:500;transition:all .18s;}
+.btn-sujet{background:rgba(79,142,247,.1);color:var(--blue);border:1px solid rgba(79,142,247,.2);}
+.btn-sujet:hover{background:var(--blue);color:#fff;}
+.btn-corrige{background:rgba(52,214,138,.07);color:var(--green);border:1px solid rgba(52,214,138,.18);}
+.btn-corrige:hover{background:var(--green);color:#080c14;}
+.quiz-theme-card{background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:1.2rem;cursor:pointer;transition:all .18s;position:relative;overflow:hidden;}
+.quiz-theme-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.progress-bar{height:4px;background:var(--border);border-radius:4px;margin-bottom:1.2rem;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--green));border-radius:4px;transition:width .3s;}
+.choice-btn{width:100%;background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:.85rem 1.1rem;color:var(--text);font-size:.88rem;cursor:pointer;text-align:left;transition:all .2s;display:flex;align-items:center;gap:.7rem;margin-bottom:.6rem;font-family:'DM Sans',sans-serif;}
+.choice-btn:hover:not(:disabled){border-color:var(--blue);background:rgba(79,142,247,.08);}
+.choice-btn.correct{background:rgba(52,214,138,.12);border-color:var(--green);color:var(--green);}
+.choice-btn.wrong{background:rgba(248,113,113,.1);border-color:var(--red);color:var(--red);}
+.choice-letter{width:24px;height:24px;border-radius:50%;border:1px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.admin-tabs{display:flex;gap:.35rem;margin-bottom:1.3rem;border-bottom:1px solid var(--border);padding-bottom:.7rem;flex-wrap:wrap;}
+.admin-tab{padding:.4rem 1rem;border-radius:9px;border:none;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:.78rem;background:transparent;color:var(--muted);transition:all .15s;}
+.admin-tab.active{background:var(--blue);color:#fff;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.7rem;margin-bottom:1.2rem;}
+.kpi-card{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:.9rem;text-align:center;}
+.section-box{background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:1.2rem;margin-bottom:1.2rem;}
+.section-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.85rem;margin-bottom:.9rem;}
+.row-item{display:flex;align-items:center;gap:.7rem;background:var(--surf2);border-radius:9px;padding:.65rem .9rem;margin-bottom:.35rem;flex-wrap:wrap;}
+.online-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);flex-shrink:0;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.code-badge{font-size:.7rem;font-family:monospace;background:rgba(79,142,247,.1);color:var(--blue);border:1px solid rgba(79,142,247,.2);border-radius:6px;padding:.12rem .45rem;}
+.error-msg{color:var(--red);font-size:.76rem;margin-bottom:.6rem;}
+@media(max-width:600px){.grid{grid-template-columns:1fr;}.kpi-grid{grid-template-columns:repeat(2,1fr);}}
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div id="screen-home" class="screen active">
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:center;gap:.5rem;margin-bottom:1.2rem;">
+      <span style="font-size:1.8rem;">⚛️</span>
+      <span class="logo">BacPhysique<span>Pro</span></span>
+    </div>
+    <h1 style="font-family:'Syne',sans-serif;font-size:1.9rem;font-weight:800;line-height:1.1;margin-bottom:.4rem;">Annales + Quiz<br>Physique-Chimie</h1>
+    <p style="color:var(--muted);font-size:.8rem;margin-bottom:1.5rem;">Sessions 2015–2025 · 58 annales · Quiz interactifs</p>
+    <div style="background:var(--surf2);border:1px solid var(--border);border-radius:14px;padding:1.3rem;margin-bottom:1rem;">
+      <p style="color:#94a3b8;font-size:.75rem;font-weight:600;margin-bottom:.6rem;text-align:left;">👤 Ton pseudo</p>
+      <input type="text" id="inp-pseudo" placeholder="Lucas, Marie…" maxlength="20">
+      <p style="color:#94a3b8;font-size:.75rem;font-weight:600;margin-bottom:.6rem;text-align:left;">🔑 Code d'accès</p>
+      <input type="text" id="inp-code" placeholder="ABC-1234" maxlength="8" style="letter-spacing:.14em;text-align:center;text-transform:uppercase;">
+      <p id="home-error" class="error-msg hidden"></p>
+      <button class="btn-blue" onclick="handleAccess()">Accéder →</button>
+    </div>
+    <div style="background:linear-gradient(135deg,rgba(79,142,247,.08),rgba(52,214,138,.06));border:1px solid rgba(79,142,247,.2);border-radius:14px;padding:1.2rem;margin-bottom:1rem;">
+      <p style="font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;margin-bottom:.3rem;">🎓 Pas encore de code ?</p>
+      <p style="color:var(--muted);font-size:.78rem;margin-bottom:.9rem;line-height:1.5;">Accès complet à vie · 58 annales · Quiz interactifs</p>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;">
+        <span style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--blue);">5€</span>
+        <div style="font-size:.7rem;color:var(--green);text-align:right;line-height:1.8;">✅ Accès immédiat<br>✅ Toutes les annales<br>✅ Quiz + corrigés</div>
+      </div>
+      <a href="https://paypal.me/Noham137/5" target="_blank" class="btn-paypal">💳 Payer 5€ via PayPal</a>
+      <p style="color:var(--muted);font-size:.68rem;text-align:center;margin-top:.6rem;">Après paiement, contactez-nous pour recevoir votre code</p>
+    </div>
+    <button class="btn-ghost" onclick="goAdmin()">⚙️ Admin</button>
+  </div>
+</div>
+
+<!-- ADMIN LOGIN -->
+<div id="screen-adminlogin" class="screen" style="display:flex;align-items:center;justify-content:center;padding:1rem;">
+  <div class="card" style="max-width:360px;">
+    <h2 style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;margin-bottom:.4rem;">🔐 Admin</h2>
+    <p style="color:var(--muted);font-size:.8rem;margin-bottom:1.2rem;">Réservé au propriétaire</p>
+    <input type="password" id="inp-adminpw" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')checkAdmin()">
+    <p id="admin-login-error" class="error-msg hidden"></p>
+    <button class="btn-blue" onclick="checkAdmin()">Connexion</button>
+    <br><button class="btn-ghost" style="margin-top:.7rem;" onclick="showScreen('home')">← Retour</button>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="screen-admin" class="screen">
+  <div class="header">
+    <div style="display:flex;align-items:center;gap:.8rem;">
+      <span>⚙️</span>
+      <div>
+        <div class="logo">Admin — BacPhysique<span>Pro</span></div>
+        <div id="online-badge" style="font-size:.65rem;color:var(--green);display:none;">
+          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:3px;"></span>
+          <span id="online-count">0</span> en ligne
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:.5rem;align-items:center;">
+      <button class="btn-ghost" onclick="refreshAdmin()" style="font-size:.7rem;">🔄</button>
+      <button class="btn-ghost" onclick="showScreen('home')">← Quitter</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="switchAdminTab('dashboard',this)">📊 Dashboard</button>
+      <button class="admin-tab" onclick="switchAdminTab('live',this)">🟢 En direct</button>
+      <button class="admin-tab" onclick="switchAdminTab('history',this)">👥 Historique</button>
+      <button class="admin-tab" onclick="switchAdminTab('codes',this)">🔑 Codes</button>
+      <button class="admin-tab" onclick="switchAdminTab('revenus',this)">💰 Revenus</button>
+    </div>
+    <div id="admin-dashboard"></div>
+    <div id="admin-live" class="hidden"></div>
+    <div id="admin-history" class="hidden"></div>
+    <div id="admin-codes" class="hidden"></div>
+    <div id="admin-revenus" class="hidden"></div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div id="screen-content" class="screen">
+  <div class="header">
+    <div style="display:flex;align-items:center;gap:.6rem;">
+      <span style="font-size:1.3rem;">⚛️</span>
+      <div>
+        <div class="logo">BacPhysique<span>Pro</span></div>
+        <div id="user-badge" style="font-size:.65rem;color:var(--green);">✅ Connecté</div>
+      </div>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchTab('annales',this)">📚 Annales</button>
+      <button class="nav-tab" onclick="switchTab('quiz',this)">🎯 Quiz</button>
+      <button class="nav-tab" onclick="switchTab('scores',this)">🏆 Scores</button>
+      <button class="nav-tab" onclick="switchTab('fiches',this)">📖 Fiches</button>
+      <button class="btn-ghost" onclick="logout()">🔒</button>
+    </div>
+  </div>
+  <div class="content">
+    <div id="tab-annales"></div>
+    <div id="tab-quiz" class="hidden"></div>
+    <div id="tab-scores" class="hidden"></div>
+    <div id="tab-fiches" class="hidden"></div>
+  </div>
+</div>
+
+<script>
+// ══════════ FIREBASE CONFIG ══════════
+const firebaseConfig = {
+  databaseURL: "https://bac-physique-b84f0-default-rtdb.europe-west1.firebasedatabase.app/"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const ADMIN_PW = "MonMotDePasseAdmin2026";
+let currentUser = null;
+let currentAdminTab = "dashboard";
+let adminRefreshTimer = null;
+
+// ══════════ FIREBASE HELPERS ══════════
+async function fbGet(path) {
+  const snap = await db.ref(path).once('value');
+  return snap.val();
+}
+async function fbSet(path, val) {
+  await db.ref(path).set(val);
+}
+async function fbPush(path, val) {
+  await db.ref(path).push(val);
+}
+async function fbUpdate(path, val) {
+  await db.ref(path).update(val);
+}
+async function fbRemove(path) {
+  await db.ref(path).remove();
+}
+
+// ══════════ UTILS ══════════
+function generateCode() {
+  const L="ABCDEFGHJKLMNPQRSTUVWXYZ", D="0123456789";
+  const l=()=>L[Math.floor(Math.random()*L.length)];
+  const d=()=>D[Math.floor(Math.random()*D.length)];
+  return `${l()}${l()}${l()}-${d()}${d()}${d()}${d()}`;
+}
+function timeAgo(iso) {
+  if(!iso) return "";
+  const diff=Math.floor((Date.now()-new Date(iso).getTime())/1000);
+  if(diff<60) return `il y a ${diff}s`;
+  if(diff<3600) return `il y a ${Math.floor(diff/60)}min`;
+  if(diff<86400) return `il y a ${Math.floor(diff/3600)}h`;
+  return `il y a ${Math.floor(diff/86400)}j`;
+}
+function medal(s){return s===10?"🥇":s>=8?"🥈":s>=6?"🥉":"💪";}
+function scoreColor(s){return s>=8?"#34d68a":s>=6?"#f59e0b":"#f87171";}
+function showErr(el,msg){el.textContent=msg;el.classList.remove("hidden");}
+
+// ══════════ SCREENS ══════════
+function showScreen(name) {
+  document.querySelectorAll(".screen").forEach(s=>s.style.display="none");
+  const el = document.getElementById("screen-"+name);
+  if(el) el.style.display = (name==="home"||name==="adminlogin") ? "flex" : "block";
+  if(name==="admin") { renderAdmin("dashboard"); startAdminRefresh(); }
+  else stopAdminRefresh();
+}
+
+// ══════════ ACCÈS ══════════
+async function handleAccess() {
+  const pseudo = document.getElementById("inp-pseudo").value.trim();
+  const code = document.getElementById("inp-code").value.trim().toUpperCase();
+  const err = document.getElementById("home-error");
+  err.classList.add("hidden");
+  if(!pseudo) { showErr(err,"Entre un pseudo."); return; }
+  if(!code) { showErr(err,"Entre ton code d'accès."); return; }
+
+  // Vérif code dans Firebase
+  const entry = await fbGet("codes/"+code);
+  if(!entry) { showErr(err,"Code invalide. Vérifie bien le code reçu."); return; }
+  if(!entry.active) { showErr(err,"Code désactivé. Contacte le vendeur."); return; }
+
+  // Enregistrer session
+  const sessionData = { code, pseudo, connectedAt: new Date().toISOString(), active: true };
+  const sessRef = await db.ref("sessions").push(sessionData);
+
+  // Mettre à jour code
+  await fbUpdate("codes/"+code, {
+    lastPseudo: pseudo,
+    lastLogin: new Date().toISOString(),
+    loginCount: (entry.loginCount||0)+1
+  });
+
+  currentUser = { code, pseudo, sessionId: sessRef.key };
+  document.getElementById("user-badge").textContent = "✅ " + pseudo;
+  showScreen("content");
+  renderAnnales();
+  renderQuizMenu();
+}
+
+// ══════════ ADMIN ══════════
+function goAdmin() { showScreen("adminlogin"); document.getElementById("inp-adminpw").value=""; }
+function checkAdmin() {
+  const pw = document.getElementById("inp-adminpw").value;
+  const err = document.getElementById("admin-login-error");
+  if(pw===ADMIN_PW) { err.classList.add("hidden"); showScreen("admin"); }
+  else showErr(err,"Mot de passe incorrect.");
+}
+function startAdminRefresh() { adminRefreshTimer = setInterval(()=>renderAdmin(currentAdminTab), 10000); }
+function stopAdminRefresh() { clearInterval(adminRefreshTimer); }
+function refreshAdmin() { renderAdmin(currentAdminTab); }
+
+function switchAdminTab(tab, btn) {
+  currentAdminTab = tab;
+  document.querySelectorAll(".admin-tab").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  ["dashboard","live","history","codes","revenus"].forEach(t=>{
+    document.getElementById("admin-"+t).classList.toggle("hidden", t!==tab);
+  });
+  renderAdmin(tab);
+}
+
+async function renderAdmin(tab) {
+  const codesObj = await fbGet("codes") || {};
+  const sessObj  = await fbGet("sessions") || {};
+  const quizObj  = await fbGet("quizHistory") || {};
+
+  const codeList = Object.entries(codesObj);
+  const sessList = Object.entries(sessObj).map(([k,v])=>({...v,_key:k}));
+  const quizList = Object.values(quizObj);
+  const activeSess = sessList.filter(s=>s.active);
+
+  // Badge en ligne
+  const ob = document.getElementById("online-badge");
+  const oc = document.getElementById("online-count");
+  if(activeSess.length>0){ ob.style.display="block"; oc.textContent=activeSess.length; }
+  else ob.style.display="none";
+
+  if(tab==="dashboard") renderDashboard(codeList, sessList, quizList, activeSess);
+  else if(tab==="live")    renderLive(activeSess);
+  else if(tab==="history") renderHistory(sessList);
+  else if(tab==="codes")   renderCodes(codeList);
+  else if(tab==="revenus") renderRevenus(codeList);
+}
+
+function renderDashboard(codeList, sessList, quizList, activeSess) {
+  const rev = codeList.filter(([,v])=>v.loginCount>0).length * 5;
+  const uniq = [...new Set(sessList.map(s=>s.pseudo))].length;
+  const actByDay = {};
+  for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); actByDay[d.toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"})]=0; }
+  sessList.forEach(s=>{ const k=new Date(s.connectedAt).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"}); if(actByDay[k]!==undefined)actByDay[k]++; });
+  const maxA = Math.max(...Object.values(actByDay),1);
+  const kpis = [
+    {l:"En ligne",v:activeSess.length,c:"#34d68a",i:"🟢"},
+    {l:"Connexions",v:sessList.length,c:"#4f8ef7",i:"🔗"},
+    {l:"Utilisateurs",v:uniq,c:"#a78bfa",i:"👤"},
+    {l:"Codes actifs",v:codeList.filter(([,v])=>v.active).length,c:"#f59e0b",i:"🔑"},
+    {l:"Revenus",v:rev+"€",c:"#34d68a",i:"💰"},
+  ];
+  const recentQ = [...quizList].reverse().slice(0,6).map(h=>`
+    <div class="row-item">
+      <span>${medal(h.score)}</span>
+      <span style="font-weight:700;flex:1;font-size:.82rem;">${h.pseudo||"?"}</span>
+      <span style="font-size:.72rem;color:#a78bfa;">${h.theme}</span>
+      <span style="font-family:'Syne',sans-serif;font-weight:800;color:${scoreColor(h.score)};font-size:.9rem;">${h.score}/${h.total}</span>
+      <span style="font-size:.65rem;color:var(--muted);">${timeAgo(h.date)}</span>
+    </div>`).join("") || "<p style='color:var(--muted);text-align:center;padding:1rem;font-size:.8rem;'>Aucun quiz effectué.</p>";
+
+  document.getElementById("admin-dashboard").innerHTML=`
+    <div class="kpi-grid">${kpis.map(k=>`<div class="kpi-card"><div style="font-size:1.3rem;margin-bottom:.2rem;">${k.i}</div><div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:${k.c};line-height:1;">${k.v}</div><div style="font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:.25rem;">${k.l}</div></div>`).join("")}</div>
+    <div class="section-box">
+      <div class="section-title">📈 Connexions — 7 derniers jours</div>
+      <div style="display:flex;align-items:flex-end;gap:.4rem;height:70px;">
+        ${Object.entries(actByDay).map(([day,count])=>`
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:.25rem;">
+            <div style="width:100%;border-radius:3px 3px 0 0;height:${Math.max((count/maxA)*58,count>0?8:3)}px;background:${count>0?"linear-gradient(180deg,#4f8ef7,rgba(79,142,247,.25))":"#1a2840"};"></div>
+            <div style="font-size:.58rem;color:var(--muted);">${day}</div>
+            ${count>0?`<div style="font-size:.62rem;color:var(--blue);font-weight:700;">${count}</div>`:""}
+          </div>`).join("")}
+      </div>
+    </div>
+    <div class="section-box"><div class="section-title">🎯 Quiz récents</div>${recentQ}</div>`;
+}
+
+function renderLive(activeSess) {
+  const rows = activeSess.length===0
+    ? "<p style='color:var(--muted);text-align:center;padding:2rem;font-size:.82rem;'>Personne connectée.</p>"
+    : activeSess.map(s=>`<div class="row-item"><span class="online-dot"></span><span style="font-weight:700;flex:1;">${s.pseudo}</span><span class="code-badge">${s.code}</span><span style="font-size:.7rem;color:var(--muted);">${timeAgo(s.connectedAt)}</span></div>`).join("");
+  document.getElementById("admin-live").innerHTML=`<div class="section-box"><div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">🟢 En ligne (${activeSess.length}) <button class="btn-ghost" onclick="refreshAdmin()" style="font-size:.7rem;">🔄 Rafraîchir</button></div>${rows}</div>`;
+}
+
+function renderHistory(sessList) {
+  const rows = [...sessList].reverse().map(s=>`
+    <div class="row-item">
+      <span style="width:6px;height:6px;border-radius:50%;background:${s.active?"var(--green)":"#475569"};flex-shrink:0;"></span>
+      <span style="font-weight:700;min-width:70px;font-size:.82rem;">${s.pseudo}</span>
+      <span class="code-badge">${s.code}</span>
+      <span style="font-size:.7rem;color:${s.active?"var(--green)":"var(--muted)"};flex:1;">${s.active?"🟢":"⚫"}</span>
+      <span style="font-size:.65rem;color:var(--muted);">${new Date(s.connectedAt).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</span>
+    </div>`).join("") || "<p style='color:var(--muted);text-align:center;padding:2rem;font-size:.82rem;'>Aucune connexion.</p>";
+  document.getElementById("admin-history").innerHTML=`
+    <div class="section-box">
+      <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
+        👥 Historique (${sessList.length})
+        <button class="btn-ghost" onclick="clearHistory()" style="font-size:.7rem;color:var(--red);border-color:rgba(248,113,113,.3);">🗑️ Effacer</button>
+      </div>
+      ${rows}
+    </div>`;
+}
+
+async function clearHistory() {
+  await fbRemove("sessions");
+  renderAdmin("history");
+}
+
+function renderCodes(codeList) {
+  const rows = [...codeList].reverse().map(([code,info])=>{
+    const sc = info.loginCount>0?"#f59e0b":info.active?"#34d68a":"#f87171";
+    const st = info.loginCount>0?`Utilisé ${info.loginCount}×`:info.active?"Actif":"Désactivé";
+    return`<div class="row-item">
+      <span style="font-family:monospace;font-size:.95rem;font-weight:800;min-width:85px;letter-spacing:.08em;">${code}</span>
+      <span style="font-size:.75rem;color:#94a3b8;flex:1;">${info.label}${info.lastPseudo?` · ${info.lastPseudo}`:""}</span>
+      <span style="font-size:.68rem;font-weight:700;color:${sc};background:${sc}15;border:1px solid ${sc}30;border-radius:6px;padding:.12rem .5rem;">${st}</span>
+      <div style="display:flex;gap:.3rem;">
+        <button id="copy-${code}" onclick="copyCode('${code}')" style="background:var(--surf);border:none;border-radius:7px;padding:.32rem .55rem;cursor:pointer;font-size:.82rem;">📋</button>
+        <button onclick="toggleCode('${code}',${info.active})" style="background:var(--surf);border:none;border-radius:7px;padding:.32rem .55rem;cursor:pointer;font-size:.82rem;">${info.active?"🔒":"🔓"}</button>
+        <button onclick="deleteCode('${code}')" style="background:var(--surf);border:none;border-radius:7px;padding:.32rem .55rem;cursor:pointer;font-size:.82rem;color:var(--red);">🗑️</button>
+      </div>
+    </div>`;
+  }).join("") || "<p style='color:var(--muted);text-align:center;padding:2rem;font-size:.8rem;'>Aucun code généré.</p>";
+
+  document.getElementById("admin-codes").innerHTML=`
+    <div class="section-box">
+      <div class="section-title" style="color:var(--blue);">➕ Générer un code</div>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+        <input type="text" id="new-label" placeholder="Prénom acheteur" style="flex:1;min-width:160px;margin:0;text-align:left;text-transform:none;letter-spacing:normal;" onkeydown="if(event.key==='Enter')genCode()">
+        <button class="btn-blue" style="flex:none;padding:.6rem 1.2rem;width:auto;" onclick="genCode()">Générer</button>
+      </div>
+      <div id="new-code-display"></div>
+    </div>
+    <div class="section-box">
+      <div class="section-title">📋 Tous les codes (${codeList.length})</div>
+      ${rows}
+    </div>`;
+}
+
+async function genCode() {
+  const label = document.getElementById("new-label")?.value.trim() || "Acheteur";
+  const code = generateCode();
+  await fbSet("codes/"+code, { label, active:true, loginCount:0, createdAt:new Date().toISOString() });
+  const d = document.getElementById("new-code-display");
+  if(d) d.innerHTML=`
+    <div style="margin-top:.9rem;background:rgba(52,214,138,.07);border:1px solid rgba(52,214,138,.25);border-radius:11px;padding:.9rem;display:flex;justify-content:space-between;align-items:center;gap:.8rem;flex-wrap:wrap;">
+      <div>
+        <p style="color:var(--green);font-size:.72rem;font-weight:600;margin-bottom:.25rem;">✅ Code généré — envoie-le à l'acheteur :</p>
+        <span style="font-family:monospace;font-size:1.5rem;font-weight:800;letter-spacing:.12em;">${code}</span>
+      </div>
+      <button id="copy-new" onclick="copyCodeText('${code}','copy-new')" style="background:rgba(52,214,138,.15);border:1px solid rgba(52,214,138,.3);color:var(--green);border-radius:9px;padding:.5rem 1rem;cursor:pointer;font-weight:700;font-size:.78rem;">📋 Copier</button>
+    </div>`;
+  renderAdmin("codes");
+}
+
+function copyCode(code) {
+  copyCodeText(code, "copy-"+code);
+}
+function copyCodeText(code, btnId) {
+  navigator.clipboard.writeText(code).catch(()=>{});
+  const btn = document.getElementById(btnId);
+  if(btn){ const o=btn.textContent; btn.textContent="✓ Copié !"; setTimeout(()=>btn.textContent=o,1500); }
+}
+
+async function toggleCode(code, currentActive) {
+  await fbUpdate("codes/"+code, { active: !currentActive });
+  renderAdmin("codes");
+}
+
+async function deleteCode(code) {
+  await fbRemove("codes/"+code);
+  renderAdmin("codes");
+}
+
+function renderRevenus(codeList) {
+  const used = codeList.filter(([,v])=>v.loginCount>0).length;
+  const rev = used*5;
+  const conv = codeList.length>0 ? Math.round(used/codeList.length*100) : 0;
+  document.getElementById("admin-revenus").innerHTML=`
+    <div class="section-box">
+      <div class="section-title">💰 Suivi des revenus</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:1.2rem;">
+        ${[{l:"Revenus estimés",v:rev+"€",c:"#34d68a",s:"Codes utilisés × 5€"},{l:"Codes vendus",v:used,c:"#4f8ef7",s:"Avec au moins 1 connexion"},{l:"Codes générés",v:codeList.length,c:"#f59e0b",s:"Total créés"},{l:"Taux conversion",v:conv+"%",c:"#a78bfa",s:"Utilisés / générés"}].map(k=>`
+          <div style="background:var(--surf2);border-radius:12px;padding:1rem;text-align:center;">
+            <div style="font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:${k.c};">${k.v}</div>
+            <div style="font-size:.78rem;font-weight:600;margin-top:.2rem;">${k.l}</div>
+            <div style="font-size:.65rem;color:var(--muted);margin-top:.15rem;">${k.s}</div>
+          </div>`).join("")}
+      </div>
+      <div style="background:rgba(52,214,138,.05);border:1px solid rgba(52,214,138,.15);border-radius:12px;padding:1rem;text-align:center;">
+        <p style="font-size:.78rem;color:var(--muted);margin-bottom:.4rem;">Lien PayPal actif</p>
+        <a href="https://paypal.me/Noham137/5" target="_blank" style="color:var(--green);font-size:.82rem;font-weight:600;">paypal.me/Noham137</a>
+      </div>
+    </div>`;
+}
+
+// ══════════ NAVIGATION CONTENU ══════════
+function switchTab(tab, btn) {
+  document.querySelectorAll(".nav-tab").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  ["annales","quiz","scores","fiches"].forEach(t=>document.getElementById("tab-"+t).classList.toggle("hidden",t!==tab));
+  if(tab==="scores") renderScores();
+  if(tab==="fiches") renderFiches();
+}
+
+async function logout() {
+  if(currentUser) {
+    await fbUpdate("sessions/"+currentUser.sessionId, { active:false, disconnectedAt:new Date().toISOString() });
+  }
+  currentUser=null;
+  showScreen("home");
+}
+
+// ══════════ ANNALES ══════════
+const TAG_COLORS={"Mécanique":"#fb923c","Newton":"#fb923c","Gravitation":"#fb923c","Mouvements":"#fb923c","Acide-base":"#818cf8","Chimie organique":"#a78bfa","Synthèse organique":"#a78bfa","Cinétique":"#c084fc","Redox":"#34d399","Piles":"#34d399","Ondes":"#38bdf8","Optique":"#38bdf8","Signaux":"#38bdf8","Circuits":"#38bdf8","Circuits RC":"#38bdf8","Énergie":"#facc15","Électricité":"#94a3b8","Incertitudes":"#94a3b8"};
+const ANNALES=[
+  {s:"Métropole 1",y:"2025",n:["Mécanique","Acide-base","Chimie organique"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2025-metropole-1"},
+  {s:"Métropole 2",y:"2025",n:["Ondes","Redox","Énergie"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2025-metropole-2"},
+  {s:"Amérique du Nord 1",y:"2025",n:["Optique","Cinétique","Mécanique"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2025-amerique-nord-1"},
+  {s:"Amérique du Nord 2",y:"2025",n:["Acide-base","Ondes","Énergie"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2025-amerique-nord-2"},
+  {s:"Asie 1",y:"2025",n:["Redox","Mécanique","Chimie organique"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2025-asie-1"},
+  {s:"Polynésie 1",y:"2025",n:["Ondes","Acide-base","Énergie"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2025-polynesie-1"},
+  {s:"Métropole 1",y:"2024",n:["Newton","Circuits","Incertitudes"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2024-metropole-1"},
+  {s:"Métropole 2",y:"2024",n:["Acide-base","Chimie organique"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2024-metropole-2"},
+  {s:"Centres Étrangers 1",y:"2024",n:["Chimie organique","Acide-base","Optique"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2024-centres-etranger-1"},
+  {s:"Centres Étrangers 2",y:"2024",n:["Mécanique","Énergie","Redox"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2024-centres-etranger-2"},
+  {s:"Amérique du Nord 1",y:"2024",n:["Ondes","Circuits","Cinétique"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2024-amerique-nord-1"},
+  {s:"Amérique du Nord 2",y:"2024",n:["Acide-base","Synthèse organique","Mécanique"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2024-amerique-nord-2"},
+  {s:"Asie 1",y:"2024",n:["Optique","Mécanique","Énergie"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2024-asie-1"},
+  {s:"Asie 2",y:"2024",n:["Redox","Chimie organique","Cinétique"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2024-asie-2"},
+  {s:"Polynésie 1",y:"2024",n:["Mécanique","Ondes","Acide-base"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2024-polynesie-1"},
+  {s:"Polynésie 2",y:"2024",n:["Synthèse organique","Redox","Énergie"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2024-polynesie-2"},
+  {s:"Métropole 1",y:"2023",n:["Ondes","Mouvements","Chimie organique"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2023-metropole-1"},
+  {s:"Métropole 2",y:"2023",n:["Énergie","Acide-base","Signaux"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2023-metropole-2"},
+  {s:"Polynésie 1",y:"2023",n:["Gravitation","Énergie","Cinétique"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2023-polynesie-1"},
+  {s:"Amérique du Nord 1",y:"2023",n:["Redox","Piles","Circuits"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2023-amerique-nord-1"},
+  {s:"Centres Étrangers 1",y:"2023",n:["Chimie organique","Mécanique","Ondes"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2023-centres-etrangers-1"},
+  {s:"Asie 1",y:"2023",n:["Optique","Acide-base","Énergie"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2023-asie-1"},
+  {s:"Métropole 1",y:"2022",n:["Acide-base","Énergie","Électricité"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2022-metropole-1"},
+  {s:"Métropole 2",y:"2022",n:["Mécanique","Chimie organique","Ondes"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2022-metropole-2"},
+  {s:"Asie 1",y:"2022",n:["Cinétique","Redox","Mécanique"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2022-asie-1"},
+  {s:"Amérique du Nord 1",y:"2022",n:["Ondes","Chimie organique","Énergie"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2022-amerique-nord-1"},
+  {s:"Polynésie 1",y:"2022",n:["Gravitation","Mécanique","Ondes"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2022-polynesie-1"},
+  {s:"Métropole 1",y:"2021",n:["Ondes","Circuits RC","Acide-base"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2021-metropole-1"},
+  {s:"Métropole 2",y:"2021",n:["Mécanique","Redox","Chimie organique"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2021-metropole-2"},
+  {s:"Amérique du Sud",y:"2021",n:["Ondes","Optique","Redox"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2021-amerique-sud"},
+  {s:"Amérique du Nord",y:"2021",n:["Mécanique","Chimie organique","Énergie"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2021-amerique-nord"},
+  {s:"Asie",y:"2021",n:["Ondes","Mécanique","Cinétique"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2021-asie"},
+  {s:"Polynésie",y:"2021",n:["Acide-base","Redox","Chimie organique"],url:"https://www.sujetdebac.fr/annales/spe-physique-chimie-2021-polynesie"},
+  {s:"Métropole",y:"2020",n:["Acide-base","Mécanique","Ondes"],url:"https://www.sujetdebac.fr/annales/physique-chimie-2020-metropole-1"},
+  {s:"Amérique du Nord",y:"2020",n:["Redox","Optique","Mécanique"],url:"https://www.sujetdebac.fr/annales/physique-chimie-2020-amerique-nord"},
+  {s:"Polynésie",y:"2020",n:["Mécanique","Redox","Chimie organique"],url:"https://www.sujetdebac.fr/annales/physique-chimie-2020-polynesie"},
+  {s:"Métropole",y:"2019",n:["Acide-base","Ondes","Mécanique"],url:"https://www.sujetdebac.fr/annales/physique-chimie-2019-metropole"},
+  {s:"Amérique du Nord",y:"2019",n:["Cinétique","Énergie","Optique"],url:"https://www.sujetdebac.fr/annales/physique-chimie-2019-amerique-nord"},
+  {s:"Polynésie",y:"2019",n:["Ondes","Chimie organique","Circuits"],url:"https://www.sujetdebac.fr/annales/physique-chimie-2019-polynesie"},
+  {s:"Métropole",y:"2018",n:["Ondes","Redox","Chimie organique"],url:"https://www.sujetdebac.fr/annales/physique-chimie-2018-metropole"},
+  {s:"Amérique du Nord",y:"2018",n:["Mécanique","Acide-base","Circuits"],url:"https://www.sujetdebac.fr/annales/physique-chimie-2018-amerique-nord"},
+  {s:"Polynésie",y:"2018",n:["Acide-base","Mécanique","Redox"],url:"https://www.sujetdebac.fr/annales/physique-chimie-2018-polynesie"},
+  {s:"Métropole",y:"2017",n:["Mécanique","Acide-base","Ondes"],url:"https://www.sujetdebac.fr/annales/physique-chimie-2017-metropole"},
+  {s:"Amérique du Nord",y:"2017",n:["Chimie organique","Énergie","Cinétique"],url:"https://www.sujetdebac.fr/annales/physique-chimie-2017-amerique-nord"},
+  {s:"Polynésie",y:"2017",n:["Acide-base","Circuits","Chimie organique"],url:"https://www.sujetdebac.fr/annales/physique-chimie-2017-polynesie"},
+  {s:"Métropole",y:"2016",n:["Ondes","Chimie organique","Mécanique"],url:"https://www.sujetdebac.fr/annales/physique-chimie-2016-metropole"},
+  {s:"Amérique du Nord",y:"2016",n:["Acide-base","Redox","Énergie"],url:"https://www.sujetdebac.fr/annales/physique-chimie-2016-amerique-nord"},
+  {s:"Polynésie",y:"2016",n:["Chimie organique","Acide-base","Circuits"],url:"https://www.sujetdebac.fr/annales/physique-chimie-2016-polynesie"},
+  {s:"Métropole",y:"2015",n:["Acide-base","Ondes","Chimie organique"],url:"https://www.sujetdebac.fr/annales/physique-chimie-2015-metropole"},
+  {s:"Amérique du Nord",y:"2015",n:["Mécanique","Redox","Énergie"],url:"https://www.sujetdebac.fr/annales/physique-chimie-2015-amerique-nord"},
+  {s:"Polynésie",y:"2015",n:["Mécanique","Chimie organique","Circuits"],url:"https://www.sujetdebac.fr/annales/physique-chimie-2015-polynesie"},
+];
+const YEARS=["all","2025","2024","2023","2022","2021","2020","2019","2018","2017","2016","2015"];
+let activeYear="all", searchVal="";
+
+function renderAnnales() {
+  const filtered=ANNALES.filter(a=>{
+    const mY=activeYear==="all"||a.y===activeYear;
+    const q=searchVal.toLowerCase();
+    return mY&&(!q||a.s.toLowerCase().includes(q)||a.n.join(" ").toLowerCase().includes(q)||a.y.includes(q));
+  });
+  document.getElementById("tab-annales").innerHTML=`
+    <div style="text-align:center;margin-bottom:1.5rem;">
+      <h1 style="font-family:'Syne',sans-serif;font-size:clamp(1.5rem,4vw,2.3rem);font-weight:800;margin-bottom:.3rem;">Annales Physique-Chimie</h1>
+      <p style="color:var(--muted);font-size:.82rem;">Sessions 2015–2025 · ${ANNALES.length} annales</p>
+    </div>
+    <div class="year-filters">${YEARS.map(y=>`<button class="year-btn${activeYear===y?" active":""}" onclick="setYear('${y}')">${y==="all"?"Tout":y}</button>`).join("")}</div>
+    <div class="search-wrap"><input type="text" placeholder="Rechercher notion, session…" value="${searchVal}" oninput="setSearch(this.value)"></div>
+    <p style="text-align:center;color:var(--muted);font-size:.72rem;margin-bottom:1rem;">${filtered.length} annale${filtered.length>1?"s":""}</p>
+    <div class="grid">${filtered.map(a=>`
+      <div class="annale-card">
+        <span class="year-badge">${a.y}</span>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.88rem;margin-bottom:.5rem;padding-right:3rem;">${a.s}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:.28rem;margin-bottom:.75rem;">${a.n.map(n=>{const c=TAG_COLORS[n]||"#94a3b8";return`<span class="tag" style="background:${c}15;color:${c};border:1px solid ${c}22;">${n}</span>`;}).join("")}</div>
+        <div class="card-links">
+          <a href="${a.url}" target="_blank" class="btn-sujet">📄 Sujet</a>
+          <a href="${a.url}" target="_blank" class="btn-corrige">✅ Corrigé</a>
+        </div>
+      </div>`).join("")}</div>`;
+}
+function setYear(y){activeYear=y;renderAnnales();}
+function setSearch(v){searchVal=v;renderAnnales();}
+
+// ══════════ QUIZ ══════════
+const QUIZ=[
+  {q:"Quelle est la 2e loi de Newton ?",c:["F = ma","E = mc²","F = mv","P = mgh"],r:0,t:"Mécanique"},
+  {q:"Un objet en chute libre a une accélération de :",c:["9,8 m/s²","10 m/s","0 m/s²","1 m/s²"],r:0,t:"Mécanique"},
+  {q:"L'énergie cinétique d'un objet est :",c:["½mv²","mgh","mc²","Fd"],r:0,t:"Mécanique"},
+  {q:"La quantité de mouvement p est égale à :",c:["mv","ma","½mv²","mgh"],r:0,t:"Mécanique"},
+  {q:"L'unité du travail est :",c:["Joule","Watt","Newton","Pascal"],r:0,t:"Mécanique"},
+  {q:"La relation entre vitesse, fréquence et longueur d'onde est :",c:["v = λf","v = λ/f","v = f/λ","v = λ²f"],r:0,t:"Ondes"},
+  {q:"La diffraction est :",c:["La déviation d'une onde autour d'un obstacle","La réflexion d'une onde","L'absorption d'une onde","L'accélération d'une onde"],r:0,t:"Ondes"},
+  {q:"L'effet Doppler concerne :",c:["Le changement de fréquence perçue selon le mouvement","La diffraction","La réfraction","L'interférence"],r:0,t:"Ondes"},
+  {q:"Une onde mécanique nécessite :",c:["Un milieu matériel","Le vide","Un champ magnétique","Une source lumineuse"],r:0,t:"Ondes"},
+  {q:"La formule des lentilles est :",c:["1/f = 1/v - 1/u","f = uv","1/f = u + v","f = u/v"],r:0,t:"Ondes"},
+  {q:"Le pH d'une solution neutre à 25°C est :",c:["7","0","14","1"],r:0,t:"Acide-base"},
+  {q:"Un acide de Brønsted est :",c:["Un donneur de proton H⁺","Un accepteur de proton","Un donneur d'électrons","Un réducteur"],r:0,t:"Acide-base"},
+  {q:"La relation entre pH et pOH est :",c:["pH + pOH = 14","pH - pOH = 7","pH × pOH = 14","pH = pOH"],r:0,t:"Acide-base"},
+  {q:"Le pKa de l'acide acétique est environ :",c:["4,8","7","1","10"],r:0,t:"Acide-base"},
+  {q:"À l'équivalence acide fort/base forte, le pH est :",c:["7","< 7","> 7","0"],r:0,t:"Acide-base"},
+  {q:"Une oxydation correspond à :",c:["Une perte d'électrons","Un gain d'électrons","Une perte de protons","Un gain de protons"],r:0,t:"Redox"},
+  {q:"Dans une pile, l'anode est :",c:["Le pôle négatif où a lieu l'oxydation","Le pôle positif","Le pôle où a lieu la réduction","Le conducteur ionique"],r:0,t:"Redox"},
+  {q:"Un réducteur est une espèce qui :",c:["Cède des électrons","Capte des électrons","Cède des protons","Capte des protons"],r:0,t:"Redox"},
+  {q:"L'électrolyse permet de :",c:["Forcer une réaction non spontanée","Mesurer un pH","Calculer une énergie","Distiller un mélange"],r:0,t:"Redox"},
+  {q:"La loi de Faraday relie :",c:["Charge électrique et quantité de matière","Tension et courant","Résistance et puissance","Force et accélération"],r:0,t:"Redox"},
+  {q:"Le groupe fonctionnel -COOH correspond à :",c:["Acide carboxylique","Alcool","Ester","Aldéhyde"],r:0,t:"Chimie organique"},
+  {q:"L'estérification est :",c:["Une réaction entre un acide et un alcool","Une oxydation","Une réduction","Une hydrolyse"],r:0,t:"Chimie organique"},
+  {q:"En spectroscopie IR, une liaison O-H large se situe vers :",c:["3200-3500 cm⁻¹","1700 cm⁻¹","2900 cm⁻¹","1100 cm⁻¹"],r:0,t:"Chimie organique"},
+  {q:"La chromatographie CCM permet de :",c:["Identifier et séparer des espèces","Mesurer une masse","Calculer un pH","Doser un acide"],r:0,t:"Chimie organique"},
+  {q:"La saponification est :",c:["L'hydrolyse basique d'un ester","La synthèse d'un ester","L'oxydation d'un alcool","La réduction d'un acide"],r:0,t:"Chimie organique"},
+  {q:"Le temps de demi-réaction t½ est :",c:["Le temps pour que la moitié des réactifs soit consommée","Le temps total de la réaction","La constante de vitesse","La durée d'activation"],r:0,t:"Cinétique"},
+  {q:"Un catalyseur :",c:["Accélère la réaction sans être consommé","Est consommé pendant la réaction","Ralentit la réaction","Change les produits formés"],r:0,t:"Cinétique"},
+  {q:"La vitesse d'une réaction augmente quand la température :",c:["Augmente","Diminue","Reste constante","Devient nulle"],r:0,t:"Cinétique"},
+  {q:"La loi de Beer-Lambert relie :",c:["Absorbance et concentration","pH et pOH","Vitesse et concentration","Énergie et fréquence"],r:0,t:"Cinétique"},
+  {q:"La capacité thermique massique c exprime :",c:["L'énergie pour chauffer 1 kg d'1°C","La chaleur totale","La température maximale","L'énergie cinétique"],r:0,t:"Énergie"},
+  {q:"L'énergie potentielle de pesanteur est :",c:["mgh","½mv²","mc²","Pt"],r:0,t:"Énergie"},
+  {q:"Le rendement énergétique est :",c:["Énergie utile / Énergie totale","Énergie totale / Énergie perdue","Puissance × temps","Tension × intensité"],r:0,t:"Énergie"},
+  {q:"La puissance électrique est :",c:["P = UI","P = U/I","P = I/U","P = U²"],r:0,t:"Énergie"},
+  {q:"Dans un circuit RC, la constante de temps τ est :",c:["τ = RC","τ = R/C","τ = C/R","τ = R+C"],r:0,t:"Circuits"},
+  {q:"La loi des nœuds stipule que :",c:["La somme des courants entrants = sortants","La somme des tensions = 0","U = RI","P = UI"],r:0,t:"Circuits"},
+  {q:"L'unité de la capacité électrique est :",c:["Farad","Ohm","Volt","Henry"],r:0,t:"Circuits"},
+];
+const THEMES=[...new Set(QUIZ.map(q=>q.t))];
+const THEME_COLORS={"Mécanique":"#fb923c","Ondes":"#38bdf8","Acide-base":"#818cf8","Redox":"#34d399","Chimie organique":"#a78bfa","Cinétique":"#c084fc","Énergie":"#facc15","Circuits":"#38bdf8"};
+let quizState={theme:null,questions:[],idx:0,score:0,selected:null,done:false};
+
+function renderQuizMenu() {
+  document.getElementById("tab-quiz").innerHTML=`
+    <div style="text-align:center;margin-bottom:1.5rem;">
+      <h2 style="font-family:'Syne',sans-serif;font-size:clamp(1.4rem,4vw,2rem);font-weight:800;margin-bottom:.3rem;">🎯 Quiz Physique-Chimie</h2>
+      <p style="color:var(--muted);font-size:.82rem;">10 questions par thème · Corrigé immédiat · Système de points</p>
+    </div>
+    <div class="grid">${THEMES.map(theme=>{
+      const c=THEME_COLORS[theme]||"#4f8ef7";
+      return`<div class="quiz-theme-card" onclick="startQuiz('${theme}')" style="border-color:${c}25;">
+        <div style="width:3px;height:100%;background:${c};position:absolute;top:0;left:0;border-radius:14px 0 0 14px;"></div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;margin-bottom:.4rem;padding-left:.3rem;">${theme}</div>
+        <div style="font-size:.75rem;color:var(--muted);padding-left:.3rem;margin-bottom:.7rem;">${QUIZ.filter(q=>q.t===theme).length} questions disponibles</div>
+        <div style="margin-top:.8rem;color:${c};font-size:.8rem;font-weight:700;padding-left:.3rem;">Commencer →</div>
+      </div>`;
+    }).join("")}</div>`;
+}
+
+function startQuiz(theme) {
+  const qs=QUIZ.filter(q=>q.t===theme).sort(()=>Math.random()-.5).slice(0,10);
+  quizState={theme,questions:qs,idx:0,score:0,selected:null,done:false};
+  renderQuizQuestion();
+}
+
+function renderQuizQuestion() {
+  const {questions,idx,score,selected,done,theme}=quizState;
+  if(done){renderQuizResult();return;}
+  const q=questions[idx];
+  const progress=idx/questions.length*100;
+  document.getElementById("tab-quiz").innerHTML=`
+    <div style="max-width:600px;margin:0 auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <button class="btn-ghost" onclick="renderQuizMenu()">← Thèmes</button>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.82rem;color:var(--muted);">${theme}</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;color:var(--blue);">${idx+1}/${questions.length}</div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${progress}%;"></div></div>
+      <div style="background:var(--surf);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin-bottom:1rem;">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;line-height:1.45;">${q.q}</div>
+      </div>
+      ${q.c.map((choice,i)=>{
+        let cls="choice-btn";
+        let letter="ABCD"[i];
+        if(selected!==null){
+          if(i===q.r){cls+=" correct";letter="✓";}
+          else if(i===selected&&i!==q.r){cls+=" wrong";letter="✗";}
+        }
+        return`<button class="${cls}" onclick="answerQuiz(${i})" ${selected!==null?"disabled":""}>
+          <span class="choice-letter">${letter}</span>${choice}
+        </button>`;
+      }).join("")}
+      <div style="text-align:center;margin-top:1rem;color:var(--muted);font-size:.75rem;">Score : <strong style="color:var(--blue);">${score}/${idx}</strong></div>
+    </div>`;
+}
+
+async function answerQuiz(i) {
+  if(quizState.selected!==null) return;
+  quizState.selected=i;
+  if(i===quizState.questions[quizState.idx].r) quizState.score++;
+  renderQuizQuestion();
+  setTimeout(async()=>{
+    if(quizState.idx+1>=quizState.questions.length){
+      quizState.done=true;
+      await fbPush("quizHistory",{theme:quizState.theme,score:quizState.score,total:quizState.questions.length,date:new Date().toISOString(),pseudo:currentUser?.pseudo});
+    } else { quizState.idx++; quizState.selected=null; }
+    renderQuizQuestion();
+  },900);
+}
+
+function renderQuizResult() {
+  const {score,questions,theme}=quizState;
+  const total=questions.length;
+  const msg=score===10?"Parfait ! 🔥":score>=8?"Excellent !":score>=6?"Bien !":score>=4?"À revoir":"Courage, révise !";
+  document.getElementById("tab-quiz").innerHTML=`
+    <div style="max-width:500px;margin:0 auto;text-align:center;">
+      <div style="background:var(--surf);border:1px solid var(--border);border-radius:20px;padding:2rem;">
+        <div style="font-size:3.5rem;margin-bottom:.8rem;">${medal(score)}</div>
+        <h2 style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;margin-bottom:.4rem;">${score}/${total}</h2>
+        <p style="font-family:'Syne',sans-serif;font-size:1rem;color:${scoreColor(score)};font-weight:700;margin-bottom:1.2rem;">${msg}</p>
+        <div style="background:var(--surf2);border-radius:12px;padding:1rem;margin-bottom:1.5rem;">
+          ${[{l:"Bonnes réponses",v:score,c:"var(--green)"},{l:"Mauvaises",v:total-score,c:"var(--red)"},{l:"Thème",v:theme,c:"#a78bfa"}].map(s=>`
+            <div style="display:flex;justify-content:space-between;padding:.35rem 0;border-bottom:1px solid var(--border);">
+              <span style="font-size:.8rem;color:var(--muted);">${s.l}</span>
+              <span style="font-size:.8rem;font-weight:700;color:${s.c};">${s.v}</span>
+            </div>`).join("")}
+        </div>
+        <div style="display:flex;gap:.7rem;">
+          <button class="btn-blue" style="flex:1;" onclick="startQuiz('${theme}')">🔄 Recommencer</button>
+          <button class="btn-ghost" style="flex:1;" onclick="renderQuizMenu()">← Thèmes</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function renderScores() {
+  const quizObj = await fbGet("quizHistory") || {};
+  const allHist = Object.values(quizObj);
+  const myHist = allHist.filter(h=>h.pseudo===currentUser?.pseudo);
+  if(myHist.length===0){
+    document.getElementById("tab-scores").innerHTML=`
+      <div style="text-align:center;padding:3rem;color:var(--muted);">
+        <div style="font-size:3rem;margin-bottom:1rem;">🎯</div>
+        <p>Tu n'as pas encore fait de quiz !</p>
+      </div>`;
+    return;
+  }
+  const bestByTheme=THEMES.map(t=>{const b=myHist.filter(h=>h.theme===t);return b.length>0?{t,s:Math.max(...b.map(h=>h.score))}:null;}).filter(Boolean);
+  document.getElementById("tab-scores").innerHTML=`
+    <div style="text-align:center;margin-bottom:1.5rem;">
+      <h2 style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;margin-bottom:.3rem;">🏆 Mes scores</h2>
+    </div>
+    <div style="max-width:600px;margin:0 auto;">
+      <div class="section-box">
+        <div class="section-title">🏅 Meilleurs scores par thème</div>
+        ${bestByTheme.map(({t,s})=>`
+          <div style="display:flex;align-items:center;gap:.8rem;padding:.5rem 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:1.1rem;">${medal(s)}</span>
+            <span style="flex:1;font-size:.82rem;font-weight:600;">${t}</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:800;color:${scoreColor(s)};">${s}/10</span>
+          </div>`).join("")}
+      </div>
+      <div class="section-box">
+        <div class="section-title">📋 Historique</div>
+        ${[...myHist].reverse().map(h=>`
+          <div class="row-item">
+            <span>${medal(h.score)}</span>
+            <span style="font-size:.78rem;color:#a78bfa;flex:1;">${h.theme}</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:800;color:${scoreColor(h.score)};font-size:.9rem;">${h.score}/${h.total}</span>
+            <span style="font-size:.65rem;color:var(--muted);">${timeAgo(h.date)}</span>
+          </div>`).join("")}
+      </div>
+    </div>`;
+}
+
+
+// ══════════ FICHES DE SYNTHESE ══════════
+const FICHES = [
+  // MECANIQUE
+  {ref:"AE10-AD11",titre:"Mouvement dans un champ de pesanteur uniforme",theme:"Mécanique",notions:["Centre de masse","Référentiel galiléen","Champ uniforme","Équations horaires","Trajectoire parabolique","Flèche & portée"],resume:"Étude du mouvement d'un projectile dans le champ de pesanteur g uniforme. Équations horaires, trajectoire parabolique, flèche et portée."},
+  {ref:"AD22",titre:"Mouvement dans un champ de gravitation newtonien",theme:"Mécanique",notions:["Champ de gravitation","Référentiel astrocentrique","Satellite","Vitesse orbitale","Période de révolution","F = GmM/r²"],resume:"Satellites en orbite circulaire autour d'un astre. Lois de Newton appliquées, vitesse et période orbitales."},
+  {ref:"AN30",titre:"Mouvements circulaires",theme:"Mécanique",notions:["Repère de Frenet","Accélération normale","Accélération tangentielle","MCU","MCNU"],resume:"Étude des mouvements circulaires uniformes et non uniformes dans le repère de Frenet. Accélérations normale et tangentielle."},
+  {ref:"AN31",titre:"Lois de Kepler",theme:"Mécanique",notions:["Loi des orbites","Loi des aires","Loi des périodes","T²/a³ = constante","Périhélie / Aphélie"],resume:"Les trois lois de Kepler décrivant le mouvement des planètes : orbites elliptiques, aires égales, et relation T²/a³."},
+  {ref:"AD46",titre:"Modéliser l'écoulement d'un fluide",theme:"Mécanique",notions:["Fluide parfait","Débit volumique","Équation de continuité","Lignes de courant","v·S = constante"],resume:"Fluide incompressible en régime permanent. Débit volumique Dv = S·v et équation de continuité."},
+  // CHIMIE
+  {ref:"AE12",titre:"Conductimétrie & loi de Kohlrausch",theme:"Chimie",notions:["Conductivité σ","Conductance G","Loi de Kohlrausch","σ = k·C","Dosage conductimétrique"],resume:"La conductivité d'une solution ionique. Loi de Kohlrausch : σ = Σλᵢ[Xᵢ]. Application au dosage conductimétrique."},
+  {ref:"AD43",titre:"Les acides α-aminés",theme:"Chimie",notions:["Fonction amine –NH₂","Fonction acide –COOH","Amphion","Ampholyte","Diagramme de prédominance","pKa"],resume:"Structure des acides α-aminés, notion d'amphion et d'ampholyte, diagramme de prédominance selon le pH."},
+  {ref:"AD51",titre:"Pile cardiaque — Redox & circuits extérieurs",theme:"Chimie",notions:["Réaction redox","Métaux du bloc s","Réducteur","Oxydant","Capacité Q = n(e⁻)·F","Constante de Faraday"],resume:"Transfert d'électrons par circuit extérieur. Capacité d'une pile : Q = n(e⁻) × F avec F = 96500 C·mol⁻¹."},
+  {ref:"AD52",titre:"Pile à combustible (hydrogène)",theme:"Chimie",notions:["H₂ + O₂ → H₂O","Oxydation anode","Réduction cathode","Pile propre","Capacité maximale","Membrane échangeuse"],resume:"Fonctionnement de la pile H₂/O₂. Oxydation de H₂ au pôle négatif, réduction de O₂ au pôle positif. Produit : eau."},
+  {ref:"AE24",titre:"Cinétique chimique — Suivi temporel",theme:"Chimie",notions:["Conductimétrie","Spectrophotométrie","Temps de demi-réaction t½","Vitesse volumique","Ordre 1","[A](t) = [A]₀·e⁻ᵏᵗ"],resume:"Méthodes de suivi (conductimétrie, spectrophotométrie, titrage). Temps de demi-réaction, loi d'ordre 1 : [A](t) = [A]₀·e⁻ᵏᵗ."},
+  {ref:"AE53",titre:"Pile électrochimique (Daniell)",theme:"Chimie",notions:["Demi-piles","Pont salin","Oxydation anode","Réduction cathode","Capacité Qmax","Pile Daniell"],resume:"Fonctionnement d'une pile électrochimique. Oxydation à l'anode (–), réduction à la cathode (+). Pont salin et neutralité électrique."},
+  // ONDES
+  {ref:"AE14",titre:"Diffraction et atténuation sonore",theme:"Ondes",notions:["Diffraction sonore","Angle θ = λ/a","Atténuation absorption","Niveaux d'intensité","A = L₁ – L₂","Isolation acoustique"],resume:"Diffraction d'une onde sonore par une ouverture. Atténuation par absorption : A = L_incident – L_transmis."},
+  {ref:"AE25",titre:"Diffraction — aigrettes d'une étoile",theme:"Ondes",notions:["Diffraction lumineuse","Angle θ = λ/a","Fente de largeur a","Théorème de Babinet","Incertitudes","Longueur d'onde λ"],resume:"Phénomène de diffraction par une fente ou un fil. Quantification par θ = λ/a. Théorème de Babinet."},
+  {ref:"AE26-AN27",titre:"Interférences (trous de Young)",theme:"Ondes",notions:["Interférences constructives","Interférences destructives","Différence de chemin optique δ","Interfrange i = λD/b","Déphasage φ","Franges brillantes/sombres"],resume:"Interférences à deux ondes. Conditions : δ = kλ (constructives), δ = (k+½)λ (destructives). Interfrange i = λD/b."},
+  {ref:"AD28-AE29",titre:"Lunette astronomique",theme:"Ondes",notions:["Système afocal","Objectif L₁","Oculaire L₂","Foyer image F'₁ = F₂","Grossissement G = f'₁/f'₂","Image renversée"],resume:"Lunette afocale : F'₁ de l'objectif confondu avec F₂ de l'oculaire. Grossissement G = f'₁/f'₂. Image virtuelle et renversée."},
+  {ref:"AD13",titre:"Niveau d'intensité sonore & atténuation géométrique",theme:"Ondes",notions:["Intensité sonore I (W/m²)","Niveau L = 10·log(I/I₀) (dB)","Atténuation A = L₁–L₂","A = 20·log(R₂/R₁)","Seuil d'audibilité","Sons dangereux"],resume:"Définition du niveau d'intensité sonore en dB. Atténuation géométrique : A = 20·log(R₂/R₁). Si distance double : A = 6 dB."},
+  // ENERGIE
+  {ref:"AD8-AD9",titre:"Modèle du gaz parfait",theme:"Énergie",notions:["PV = nRT","R = 8,31 J·K⁻¹·mol⁻¹","Loi de Mariotte","Pression","Température en Kelvin","Conversions d'unités"],resume:"L'équation d'état du gaz parfait PV = nRT. Loi de Mariotte à T constante (PV = constante). Conversions d'unités de pression."},
+  {ref:"AD18",titre:"1er principe de la thermodynamique",theme:"Énergie",notions:["Système thermodynamique","Énergie interne U","ΔU = W + Q","Travail W","Transfert thermique Q","ΔU = m·c·ΔT"],resume:"Premier principe : ΔU = W + Q. Énergie interne, travail et transfert thermique. ΔU = m·cₘ·ΔT pour une phase condensée."},
+  {ref:"AD20",titre:"Transferts d'énergie entre systèmes macroscopiques",theme:"Énergie",notions:["Conduction","Rayonnement","Convection","Flux thermique Φ","Résistance thermique Rth","Isolation thermique"],resume:"Trois modes de transfert thermique (conduction, rayonnement, convection). Flux Φ = (Tᵢ–Tₑ)/Rth. Résistance Rth = e/(λ·S)."},
+  // CIRCUITS
+  {ref:"AE48-AD49",titre:"Modèle du condensateur (circuit RC)",theme:"Circuits",notions:["Condensateur C","Constante de temps τ = RC","Charge Uc(t) = E(1–e⁻ᵗ/τ)","Décharge Uc(t) = E·e⁻ᵗ/τ","Régime transitoire / stationnaire","Capteur capacitif"],resume:"Charge et décharge d'un condensateur dans un circuit RC. Constante de temps τ = RC. Régime stationnaire atteint à 5τ."},
+  // NOUVELLES FICHES
+  {ref:"AD32",titre:"Mouvement d'une particule chargée dans un champ électrique uniforme",theme:"Mécanique",notions:["Champ électrique E = U/d","Force électrique F = qE","Accélération a = qE/m","Équations horaires MRUА","Théorème énergie cinétique","Vitesse v = √(2qU/m)","Accélérateur linéaire"],resume:"Particule chargée dans un condensateur plan. Champ uniforme E = U/d, mouvement rectiligne uniformément accéléré. Énergie cinétique : ½mv² = qU."},
+  {ref:"AD54",titre:"Décrire la lumière par un flux de photons",theme:"Ondes",notions:["Photon E = hν","Constante de Planck h = 6,63×10⁻³⁴ J·s","Effet photoélectrique","Fréquence de seuil νs","Wext = hνs","Ec = h(ν–νs)","Effet photovoltaïque","Gap ΔE"],resume:"Modèle corpusculaire de la lumière. Énergie d'un photon E = hν. Effet photoélectrique : émission d'électrons si ν > νs. Bilan énergétique : hν = Wext + Ec."},
+  {ref:"AE45",titre:"Force des acides et des bases",theme:"Chimie",notions:["Produit ionique de l'eau Ke","pKe = 14 à 25°C","Acide fort τ = 1","Acide faible τ < 1","Base forte / faible","pH acide fort = –log C","pH base forte = pKe + log C","Diagramme de prédominance","Taux d'avancement τf"],resume:"Autoprotolyse de l'eau (Ke = 10⁻¹⁴). Acide/base fort(e) : réaction totale. Acide/base faible : réaction partielle, taux τ < 1. pH = –log C pour acide fort."},
+];
+
+const THEMES_FICHES = [...new Set(FICHES.map(f=>f.theme))];
+const THEME_COLORS_FICHE = {"Mécanique":"#fb923c","Chimie":"#818cf8","Ondes":"#38bdf8","Énergie":"#facc15","Circuits":"#34d399"};
+
+let ficheActive = null;
+let ficheThemeFilter = "all";
+let ficheSearch = "";
+
+function renderFiches(){
+  const filtered = FICHES.filter(f=>{
+    const mT = ficheThemeFilter==="all" || f.theme===ficheThemeFilter;
+    const q = ficheSearch.toLowerCase();
+    return mT && (!q || f.titre.toLowerCase().includes(q) || f.ref.toLowerCase().includes(q) || f.notions.join(" ").toLowerCase().includes(q));
+  });
+
+  document.getElementById("tab-fiches").innerHTML=`
+    <div style="text-align:center;margin-bottom:1.5rem;">
+      <h2 style="font-family:'Syne',sans-serif;font-size:clamp(1.4rem,4vw,2rem);font-weight:800;margin-bottom:.3rem;">📖 Fiches de Synthèse</h2>
+      <p style="color:var(--muted);font-size:.82rem;">${FICHES.length} fiches · Clique sur une fiche pour voir les notions clés</p>
+    </div>
+
+    <div style="display:flex;gap:.35rem;justify-content:center;flex-wrap:wrap;margin-bottom:.8rem;">
+      <button class="year-btn${ficheThemeFilter==="all"?" active":""}" onclick="setFicheTheme('all')">Tout</button>
+      ${THEMES_FICHES.map(t=>`<button class="year-btn${ficheThemeFilter===t?" active":""}" onclick="setFicheTheme('${t}')" style="${ficheThemeFilter===t?"background:"+THEME_COLORS_FICHE[t]+";border-color:"+THEME_COLORS_FICHE[t]+";":""}">${t}</button>`).join("")}
+    </div>
+
+    <div class="search-wrap" style="margin-bottom:1.2rem;">
+      <input type="text" placeholder="Rechercher une fiche, notion…" value="${ficheSearch}" oninput="setFicheSearch(this.value)">
+    </div>
+
+    <p style="text-align:center;color:var(--muted);font-size:.72rem;margin-bottom:1rem;">${filtered.length} fiche${filtered.length>1?"s":""}</p>
+
+    <div class="grid">
+      ${filtered.map(f=>{
+        const c = THEME_COLORS_FICHE[f.theme]||"#4f8ef7";
+        return\`<div onclick="toggleFiche('\${f.ref}')" style="background:var(--surf);border:1px solid \${ficheActive===f.ref?c+"60":"var(--border)"};border-radius:14px;padding:1rem 1.1rem;cursor:pointer;transition:all .18s;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:\${c};border-radius:14px 0 0 14px;"></div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;margin-bottom:.5rem;">
+            <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.85rem;color:var(--text);line-height:1.3;padding-left:.3rem;">\${f.titre}</div>
+            <span style="font-size:.62rem;font-weight:700;color:\${c};background:\${c}15;border:1px solid \${c}25;border-radius:6px;padding:.12rem .45rem;flex-shrink:0;">\${f.ref}</span>
+          </div>
+          <div style="font-size:.72rem;color:var(--muted);padding-left:.3rem;margin-bottom:.7rem;">\${f.resume}</div>
+          \${ficheActive===f.ref?\`
+            <div style="background:var(--surf2);border-radius:10px;padding:.8rem;margin-top:.5rem;">
+              <div style="font-family:'Syne',sans-serif;font-size:.72rem;font-weight:700;color:\${c};margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.08em;">📌 Notions clés</div>
+              <div style="display:flex;flex-wrap:wrap;gap:.3rem;">
+                \${f.notions.map(n=>\`<span style="font-size:.68rem;padding:.18rem .5rem;border-radius:6px;background:\${c}12;color:\${c};border:1px solid \${c}22;">\${n}</span>\`).join("")}
+              </div>
+            </div>\`:""}
+          <div style="margin-top:.7rem;text-align:right;font-size:.72rem;color:\${c};font-weight:600;padding-right:.3rem;">
+            \${ficheActive===f.ref?"▲ Fermer":"▼ Voir les notions"}
+          </div>
+        </div>\`;
+      }).join("")}
+    </div>`;
+}
+
+function toggleFiche(ref){
+  ficheActive = ficheActive===ref ? null : ref;
+  renderFiches();
+}
+
+function setFicheTheme(t){
+  ficheThemeFilter=t;
+  ficheActive=null;
+  renderFiches();
+}
+
+function setFicheSearch(v){
+  ficheSearch=v;
+  ficheActive=null;
+  renderFiches();
+}
+
+// ══════════ INIT ══════════
+document.getElementById("inp-code").addEventListener("keydown",e=>{if(e.key==="Enter")handleAccess();});
+document.getElementById("inp-pseudo").addEventListener("keydown",e=>{if(e.key==="Enter")handleAccess();});
+</script>
+</body>
+</html>
